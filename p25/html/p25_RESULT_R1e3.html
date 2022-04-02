@@ -1,0 +1,539 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>p25_RESULT_R1e3</title><meta name="generator" content="MATLAB 9.11"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2022-02-06"><meta name="DC.source" content="p25_RESULT_R1e3.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Accessing to informations related to the number of inner iterations</a></li><li><a href="#3">PK PLUS</a></li><li><a href="#4">Steepest Descent</a></li><li><a href="#5">Plots</a></li></ul></div><pre class="codeinput">clear
+close <span class="string">all</span> <span class="string">force</span>
+clc
+<span class="comment">%shutting down the warning related to the tolerance for the gmres resolution in the Inexact NM</span>
+warning(<span class="string">"off"</span>)
+
+f = @(x) p25_function(x);
+gradf = @(x) p25_gradient(x);
+hessf = @(x) p25_hessian(x);
+
+fterms_lin = @(gradf_norm) 0.5;
+fterms_suplin = @(gradf_norm) min([0.5, sqrt(gradf_norm)]);
+fterms_quad = @(gradf_norm) min([0.5, gradf_norm]);
+
+kmax = 1e3;
+tol = 1e-6;
+
+<span class="comment">%R1000</span>
+n = 3;
+dim = 10^n;
+
+<span class="comment">%assembling the starting point</span>
+x0 = ones(dim,1);
+i = 1;
+<span class="keyword">while</span> i&lt;=dim
+    x0(i) = -1.2;
+    i = i + 2;
+<span class="keyword">end</span>
+
+<span class="comment">% Inexact Newton Method</span>
+load <span class="string">forcing_terms.mat</span>
+
+<span class="comment">%backtracking parameters</span>
+btmax = 50;
+c1 = 1e-4;
+rho = 0.8;
+
+<span class="comment">%inexact resolution parameters</span>
+gmres_maxit = 100;
+
+tic
+[~, fINN, ~, k_INN, gradients_INN, fINN_seq] = innewton_general(x0, f, gradf, hessf, kmax, <span class="keyword">...</span>
+    tol, c1, rho, btmax, fterms_quad, gmres_maxit);
+comp_time = toc;
+
+disp(<span class="string">"****************"</span>)
+disp(<span class="string">"INEXACT NEWTON METHOD"</span>)
+disp(<span class="string">"****************"</span>)
+disp(<span class="string">"-----"</span>)
+fprintf(<span class="string">"In %d/%d its a solution with gradient"</span> + <span class="keyword">...</span>
+    <span class="string">" equal to %e has been found\n"</span>, k_INN, kmax, gradients_INN(end))
+disp(<span class="string">"-----"</span>)
+
+fprintf(<span class="string">"In this point the function has value equal to %d\n"</span>, fINN_seq(end))
+
+disp(<span class="string">"-----"</span>)
+fprintf(<span class="string">"This solutions has been found in %e seconds\n"</span>, comp_time)
+disp(<span class="string">"****************"</span>)
+
+tic
+[~, fk, ~, k_INN_corr, grads_corr, values_corr, inner_INN] = innewton_general_with_correction(x0, f, gradf, hessf, kmax, <span class="keyword">...</span>
+    tol, c1, rho, btmax, fterms_quad, gmres_maxit);
+comp_time = toc;
+
+disp(<span class="string">"****************"</span>)
+disp(<span class="string">"INEXACT NEWTON METHOD WITH CORRECTION"</span>)
+disp(<span class="string">"****************"</span>)
+disp(<span class="string">"-----"</span>)
+fprintf(<span class="string">"In %d/%d its a solution with gradient"</span> + <span class="keyword">...</span>
+    <span class="string">" equal to %e has been found\n"</span>, k_INN_corr, kmax, grads_corr(end))
+disp(<span class="string">"-----"</span>)
+
+fprintf(<span class="string">"In this point the function has value equal to %d\n"</span>, values_corr(end))
+
+disp(<span class="string">"-----"</span>)
+fprintf(<span class="string">"This solutions has been found in %e seconds\n"</span>, comp_time)
+disp(<span class="string">"****************"</span>)
+</pre><pre class="codeoutput">****************
+INEXACT NEWTON METHOD
+****************
+-----
+In 1000/1000 its a solution with gradient equal to 1.982006e+01 has been found
+-----
+In this point the function has value equal to 1.032316e+03
+-----
+This solutions has been found in 3.377654e+00 seconds
+****************
+****************
+INEXACT NEWTON METHOD WITH CORRECTION
+****************
+-----
+In 326/1000 its a solution with gradient equal to 1.688123e-13 has been found
+-----
+In this point the function has value equal to 1.424880e-26
+-----
+This solutions has been found in 8.310493e-01 seconds
+****************
+</pre><h2 id="2">Accessing to informations related to the number of inner iterations</h2><pre class="codeinput"><span class="comment">% At first I define a number of bins</span>
+n_bins = 5;
+
+<span class="comment">% The I return the histogram of the number of iterations</span>
+set(groot, <span class="string">'defaultAxesTickLabelInterpreter'</span>,<span class="string">'latex'</span>);
+set(groot, <span class="string">'defaultLegendInterpreter'</span>,<span class="string">'latex'</span>);
+
+counts = histcounts(inner_INN,n_bins);
+
+tick_material = sort(unique(counts));
+
+<span class="comment">% "cutting" only top 2 ticks</span>
+tick_material = tick_material(2:end);
+
+figure(1)
+
+bar(1:n_bins, counts)
+title(<span class="string">"{\bf Histogram of Inner Iterations}"</span>, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+
+<span class="comment">% this changes when n_bins changes</span>
+xticklabels([<span class="string">"1:20"</span>, <span class="string">"20:40"</span>, <span class="string">"40:60"</span>, <span class="string">"60:80"</span>, <span class="string">"80:100"</span>])
+
+yticks(tick_material)
+yticklabels(tick_material)
+grid()
+</pre><img vspace="5" hspace="5" src="p25_RESULT_R1e3_01.png" alt=""> <h2 id="3">PK PLUS</h2><pre class="codeinput">rho = 0.2;
+tic
+[~, fk_cgm, k_cgm, gradients_cgm, values_cgm] = nonlinear_PKplus(<span class="keyword">...</span>
+    f, gradf, tol, x0, kmax, c1, rho, btmax);
+comp_time = toc;
+
+disp(<span class="string">"****************"</span>)
+disp(<span class="string">"PK+ CONJ. GM"</span>)
+disp(<span class="string">"****************"</span>)
+disp(<span class="string">"-----"</span>)
+fprintf(<span class="string">"In %d/%d its a solution with gradient"</span> + <span class="keyword">...</span>
+    <span class="string">" equal to %e has been found\n"</span>, k_cgm, kmax, gradients_cgm(end))
+disp(<span class="string">"-----"</span>)
+
+fprintf(<span class="string">"In this point the function has value equal to %d\n"</span>, fk_cgm)
+
+disp(<span class="string">"-----"</span>)
+fprintf(<span class="string">"This solutions has been found in %e seconds\n"</span>, comp_time)
+disp(<span class="string">"****************"</span>)
+</pre><pre class="codeoutput">****************
+PK+ CONJ. GM
+****************
+-----
+In 177/1000 its a solution with gradient equal to 5.613526e-07 has been found
+-----
+In this point the function has value equal to 5.054749e-13
+-----
+This solutions has been found in 1.107145e-01 seconds
+****************
+</pre><h2 id="4">Steepest Descent</h2><pre class="codeinput">rho = 0.3;
+alpha0 = 0.85;
+btmax = 100;
+
+kmax = 1e3;
+
+tic
+[~, fk_SD, k_SD, grad_seq, fseq_SD] = SD_backtrack(x0, f, gradf, alpha0, <span class="keyword">...</span>
+                                      kmax, tol, c1, rho, btmax);
+comp_time = toc;
+
+fprintf(<span class="string">"\nCOMPUTATIONAL TIME: %e seconds \n"</span>,comp_time)
+disp(<span class="string">"****************"</span>)
+disp(<span class="string">"SIMPLE STEEPEST DESCENT"</span>)
+disp(<span class="string">"****************"</span>)
+disp(<span class="string">"-----"</span>)
+fprintf(<span class="string">"In %d/%d its a solution with gradient"</span> + <span class="keyword">...</span>
+    <span class="string">" equal to %e has been found\n"</span>, k_SD, kmax, grad_seq(k_SD))
+disp(<span class="string">"-----"</span>)
+
+fprintf(<span class="string">"In this point the function has value equal to %d\n"</span>, fseq_SD(k_SD))
+
+disp(<span class="string">"-----"</span>)
+fprintf(<span class="string">"This solutions has been found in %e seconds\n"</span>, comp_time)
+disp(<span class="string">"****************"</span>)
+</pre><pre class="codeoutput">
+COMPUTATIONAL TIME: 4.367248e-01 seconds 
+****************
+SIMPLE STEEPEST DESCENT
+****************
+-----
+In 1000/1000 its a solution with gradient equal to 2.581939e+00 has been found
+-----
+In this point the function has value equal to 1.862065e+01
+-----
+This solutions has been found in 4.367248e-01 seconds
+****************
+</pre><h2 id="5">Plots</h2><pre class="codeinput">close <span class="string">all</span> <span class="string">force</span>
+figure(1)
+
+sgtitle(<span class="string">"Results in \bf R1e3"</span>, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+
+subplot(2,1,1)
+hold <span class="string">on</span>
+plot(grads_corr, <span class="string">"LineWidth"</span>, 1.0)
+plot(gradients_cgm, <span class="string">"LineWidth"</span>, 1.0)
+plot(grad_seq, <span class="string">"LineWidth"</span>, 1.0)
+
+l = legend(<span class="string">"Inexact Newton"</span>, <span class="string">"PK+ CGM"</span>, <span class="string">"Steepest Descent"</span>, <span class="string">"Location"</span>, <span class="string">"southwest"</span>);
+set(l, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+
+title(<span class="string">"\bf Gradient norm over iterations"</span>, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+
+k_stops = sort([k_INN_corr, k_cgm, k_SD]);
+grad_stops = sort([gradients_cgm(end), grads_corr(end), grad_seq(end)]);
+
+yticks(grad_stops)
+ytickformat(<span class="string">"%.3e"</span>)
+xticks(k_stops)
+
+xlabel(<span class="string">"Number of iterations"</span>, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+ylabel(<span class="string">"Norm of the gradient"</span>, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+
+set(gca, <span class="string">"TickLabelInterpreter"</span>, <span class="string">"latex"</span>)
+set(gca, <span class="string">"YScale"</span>, <span class="string">"log"</span>)
+set(gca, <span class="string">"XScale"</span>, <span class="string">"log"</span>)
+grid <span class="string">on</span>
+hold <span class="string">off</span>
+
+<span class="comment">%%%%%%%%%</span>
+
+subplot(2,1,2)
+hold <span class="string">on</span>
+plot(values_corr, <span class="string">"LineWidth"</span>, 1.0)
+plot(values_cgm, <span class="string">"LineWidth"</span>, 1.0)
+plot(fseq_SD, <span class="string">"LineWidth"</span>, 1.0)
+
+l = legend(<span class="string">"Inexact Newton"</span>, <span class="string">"PK+ CGM"</span>, <span class="string">"Steepest Descent"</span>, <span class="string">"Location"</span>, <span class="string">"southwest"</span>);
+set(l, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+
+title(<span class="string">"\bf Objective function value over iterations"</span>, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+
+k_stops = sort([k_INN_corr, k_cgm, k_SD]);
+f_stop = sort([values_cgm(end), values_corr(end), fseq_SD(end)]);
+
+yticks(f_stop)
+ytickformat(<span class="string">"%.3e"</span>)
+xticks(k_stops)
+
+xlabel(<span class="string">"Number of iterations"</span>, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+ylabel(<span class="string">"Objective function value"</span>, <span class="string">"Interpreter"</span>, <span class="string">"latex"</span>)
+
+set(gca, <span class="string">"TickLabelInterpreter"</span>, <span class="string">"latex"</span>)
+set(gca, <span class="string">"YScale"</span>, <span class="string">"log"</span>)
+set(gca, <span class="string">"XScale"</span>, <span class="string">"log"</span>)
+grid <span class="string">on</span>
+hold <span class="string">off</span>
+</pre><img vspace="5" hspace="5" src="p25_RESULT_R1e3_02.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+clear
+close all force
+clc
+%shutting down the warning related to the tolerance for the gmres resolution in the Inexact NM
+warning("off") 
+
+f = @(x) p25_function(x); 
+gradf = @(x) p25_gradient(x); 
+hessf = @(x) p25_hessian(x); 
+
+fterms_lin = @(gradf_norm) 0.5; 
+fterms_suplin = @(gradf_norm) min([0.5, sqrt(gradf_norm)]); 
+fterms_quad = @(gradf_norm) min([0.5, gradf_norm]); 
+
+kmax = 1e3; 
+tol = 1e-6; 
+
+%R1000
+n = 3;
+dim = 10^n; 
+
+%assembling the starting point
+x0 = ones(dim,1);
+i = 1; 
+while i<=dim
+    x0(i) = -1.2; 
+    i = i + 2; 
+end
+
+% Inexact Newton Method
+load forcing_terms.mat
+
+%backtracking parameters
+btmax = 50; 
+c1 = 1e-4; 
+rho = 0.8;
+
+%inexact resolution parameters
+gmres_maxit = 100; 
+
+tic
+[~, fINN, ~, k_INN, gradients_INN, fINN_seq] = innewton_general(x0, f, gradf, hessf, kmax, ...
+    tol, c1, rho, btmax, fterms_quad, gmres_maxit);
+comp_time = toc;
+
+disp("****************")
+disp("INEXACT NEWTON METHOD")
+disp("****************")
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+fprintf("In %d/%d its a solution with gradient" + ...
+    " equal to %e has been found\n", k_INN, kmax, gradients_INN(end))
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+
+fprintf("In this point the function has value equal to %d\n", fINN_seq(end))
+
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+fprintf("This solutions has been found in %e seconds\n", comp_time)
+disp("****************")
+
+tic
+[~, fk, ~, k_INN_corr, grads_corr, values_corr, inner_INN] = innewton_general_with_correction(x0, f, gradf, hessf, kmax, ...
+    tol, c1, rho, btmax, fterms_quad, gmres_maxit);
+comp_time = toc;
+
+disp("****************")
+disp("INEXACT NEWTON METHOD WITH CORRECTION")
+disp("****************")
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+fprintf("In %d/%d its a solution with gradient" + ...
+    " equal to %e has been found\n", k_INN_corr, kmax, grads_corr(end))
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+
+fprintf("In this point the function has value equal to %d\n", values_corr(end))
+
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+fprintf("This solutions has been found in %e seconds\n", comp_time)
+disp("****************")
+
+%% Accessing to informations related to the number of inner iterations
+
+% At first I define a number of bins
+n_bins = 5; 
+
+% The I return the histogram of the number of iterations
+set(groot, 'defaultAxesTickLabelInterpreter','latex');
+set(groot, 'defaultLegendInterpreter','latex');
+
+counts = histcounts(inner_INN,n_bins); 
+
+tick_material = sort(unique(counts)); 
+
+% "cutting" only top 2 ticks
+tick_material = tick_material(2:end); 
+
+figure(1)
+
+bar(1:n_bins, counts)
+title("{\bf Histogram of Inner Iterations}", "Interpreter", "latex")
+
+% this changes when n_bins changes
+xticklabels(["1:20", "20:40", "40:60", "60:80", "80:100"])
+
+yticks(tick_material)
+yticklabels(tick_material)
+grid()
+
+%% PK PLUS
+
+rho = 0.2;
+tic
+[~, fk_cgm, k_cgm, gradients_cgm, values_cgm] = nonlinear_PKplus(...
+    f, gradf, tol, x0, kmax, c1, rho, btmax);
+comp_time = toc;
+
+disp("****************")
+disp("PK+ CONJ. GM")
+disp("****************")
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+fprintf("In %d/%d its a solution with gradient" + ...
+    " equal to %e has been found\n", k_cgm, kmax, gradients_cgm(end))
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+
+fprintf("In this point the function has value equal to %d\n", fk_cgm)
+
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+fprintf("This solutions has been found in %e seconds\n", comp_time)
+disp("****************")
+
+%% Steepest Descent
+
+rho = 0.3; 
+alpha0 = 0.85;
+btmax = 100; 
+
+kmax = 1e3;
+
+tic
+[~, fk_SD, k_SD, grad_seq, fseq_SD] = SD_backtrack(x0, f, gradf, alpha0, ...
+                                      kmax, tol, c1, rho, btmax);
+comp_time = toc;
+
+fprintf("\nCOMPUTATIONAL TIME: %e seconds \n",comp_time)
+disp("****************")
+disp("SIMPLE STEEPEST DESCENT")
+disp("****************")
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+fprintf("In %d/%d its a solution with gradient" + ...
+    " equal to %e has been found\n", k_SD, kmax, grad_seq(k_SD))
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+
+fprintf("In this point the function has value equal to %d\n", fseq_SD(k_SD))
+
+disp("REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-")
+fprintf("This solutions has been found in %e seconds\n", comp_time)
+disp("****************")
+
+%% Plots 
+close all force
+figure(1)
+
+sgtitle("Results in \bf R1e3", "Interpreter", "latex")
+
+subplot(2,1,1)
+hold on
+plot(grads_corr, "LineWidth", 1.0)
+plot(gradients_cgm, "LineWidth", 1.0)
+plot(grad_seq, "LineWidth", 1.0)
+
+l = legend("Inexact Newton", "PK+ CGM", "Steepest Descent", "Location", "southwest");
+set(l, "Interpreter", "latex")
+
+title("\bf Gradient norm over iterations", "Interpreter", "latex")
+
+k_stops = sort([k_INN_corr, k_cgm, k_SD]); 
+grad_stops = sort([gradients_cgm(end), grads_corr(end), grad_seq(end)]);
+
+yticks(grad_stops)
+ytickformat("%.3e")
+xticks(k_stops)
+
+xlabel("Number of iterations", "Interpreter", "latex")
+ylabel("Norm of the gradient", "Interpreter", "latex")
+
+set(gca, "TickLabelInterpreter", "latex")
+set(gca, "YScale", "log")
+set(gca, "XScale", "log")
+grid on
+hold off
+
+%%%%%%%%%
+
+subplot(2,1,2)
+hold on
+plot(values_corr, "LineWidth", 1.0)
+plot(values_cgm, "LineWidth", 1.0)
+plot(fseq_SD, "LineWidth", 1.0)
+
+l = legend("Inexact Newton", "PK+ CGM", "Steepest Descent", "Location", "southwest");
+set(l, "Interpreter", "latex")
+
+title("\bf Objective function value over iterations", "Interpreter", "latex")
+
+k_stops = sort([k_INN_corr, k_cgm, k_SD]); 
+f_stop = sort([values_cgm(end), values_corr(end), fseq_SD(end)]);
+
+yticks(f_stop)
+ytickformat("%.3e")
+xticks(k_stops)
+
+xlabel("Number of iterations", "Interpreter", "latex")
+ylabel("Objective function value", "Interpreter", "latex")
+
+set(gca, "TickLabelInterpreter", "latex")
+set(gca, "YScale", "log")
+set(gca, "XScale", "log")
+grid on
+hold off
+
+##### SOURCE END #####
+--></body></html>

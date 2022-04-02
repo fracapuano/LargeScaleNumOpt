@@ -1,0 +1,42 @@
+****************
+INEXACT NEWTON METHOD
+****************
+-----
+In 979/1000 its a solution with gradient equal to 9.917011e-07 has been found
+-----
+In this point the function has value equal to 1.658560e-06
+-----
+This solutions has been found in 3.038404e+01 seconds
+****************
+****************
+INEXACT NEWTON METHOD WITH CORRECTION
+****************
+-----
+In 1000/1000 its a solution with gradient equal to 1.746381e-03 has been found
+-----
+In this point the function has value equal to 1.066932e-02
+-----
+This solutions has been found in 6.119483e+00 seconds
+****************
+****************
+PK+ CONJ. GM
+****************
+-----
+In 1000/1000 its a solution with gradient equal to 4.225236e+00 has been found
+-----
+In this point the function has value equal to 2.068331e+00
+-----
+This solutions has been found in 1.586640e-01 seconds
+****************
+
+COMPUTATIONAL TIME: 2.870700e-01 seconds 
+****************
+SIMPLE STEEPEST DESCENT
+****************
+-----
+In 1000/1000 its a solution with gradient equal to 8.348880e-01 has been found
+-----
+In this point the function has value equal to 5.440116e-01
+-----
+This solutions has been found in 2.870700e-01 seconds
+****************

@@ -1,0 +1,375 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>innewton_general_with_correction</title><meta name="generator" content="MATLAB 9.11"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2022-02-04"><meta name="DC.source" content="innewton_general_with_correction.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="keyword">function</span> [xk, fk, gradfk_norm, k, xseq, grads, values] = innewton_general_with_correction(x0, f, gradf, Hessf, kmax, <span class="keyword">...</span>
+    tolgrad, c1, rho, btmax, fterms, pcg_maxit)
+
+<span class="comment">% Function that performs the newton optimization method,</span>
+<span class="comment">% implementing the backtracking strategy and, optionally, finite</span>
+<span class="comment">% differences approximations for the gradient and/or the Hessian.</span>
+<span class="comment">%</span>
+<span class="comment">% INPUTS:</span>
+<span class="comment">% x0 = n-dimensional column vector;</span>
+<span class="comment">% f = function handle that describes a function R^n-&gt;R;</span>
+<span class="comment">% gradf = function handle that describes the gradient of f (not necessarily</span>
+<span class="comment">% used);</span>
+<span class="comment">% Hessf = function handle that describes the Hessian of f (not necessarily</span>
+<span class="comment">% used);</span>
+<span class="comment">% kmax = maximum number of iterations permitted;</span>
+<span class="comment">% tolgrad = value used as stopping criterion w.r.t. the norm of the</span>
+<span class="comment">% gradient;</span>
+<span class="comment">% c1 = &#65279;the factor of the Armijo condition that must be a scalar in (0,1);</span>
+<span class="comment">% rho = &#65279;fixed factor, lesser than 1, used for reducing alpha0;</span>
+<span class="comment">% btmax = &#65279;maximum number of steps for updating alpha during the</span>
+<span class="comment">% backtracking strategy;</span>
+<span class="comment">% fterms = f. handle "@(gradfk, k) ..." that returns the forcing term</span>
+<span class="comment">% eta_k at each iteration</span>
+<span class="comment">% pcg_maxit = maximum number of iterations for the pcg solver.</span>
+<span class="comment">%</span>
+<span class="comment">% OUTPUTS:</span>
+<span class="comment">% xk = the last x computed by the function;</span>
+<span class="comment">% fk = the value f(xk);</span>
+<span class="comment">% gradfk_norm = value of the norm of gradf(xk)</span>
+<span class="comment">% k = index of the last iteration performed</span>
+<span class="comment">% xseq = n-by-k matrix where the columns are the xk computed during the</span>
+<span class="comment">% iterations</span>
+<span class="comment">% btseq = 1-by-k vector where elements are the number of backtracking</span>
+<span class="comment">% iterations at each optimization step.</span>
+<span class="comment">%</span>
+
+<span class="comment">% Function handle for the armijo condition</span>
+farmijo = @(fk, alpha, gradfk, pk) <span class="keyword">...</span>
+    fk + c1 * alpha * gradfk' * pk;
+
+<span class="comment">% Initializations</span>
+xseq = zeros(length(x0), kmax);
+grads = zeros(1, kmax);
+values = zeros(1, kmax);
+
+xk = x0;
+n = length(x0);
+fk = f(xk);
+k = 1;
+gradfk = gradf(xk);
+gradfk_norm = norm(gradfk);
+
+<span class="comment">%tau initialization</span>
+beta = 1e-3;
+a_min = min(diag(Hessf(xk)));
+
+<span class="keyword">if</span> a_min &gt; 0
+    tau_zero = 0;
+<span class="keyword">else</span>
+    tau_zero = beta - a_min;
+<span class="keyword">end</span> <span class="comment">%tau initialization</span>
+
+spd_max = 50;
+tau_k = tau_zero;
+
+<span class="keyword">while</span> k &lt; kmax &amp;&amp; gradfk_norm &gt;= tolgrad
+    <span class="comment">% "INEXACTLY" compute the descent direction as solution of</span>
+    Hessf_computed = Hessf(xk);
+
+    <span class="comment">% TOLERANCE VARYING W.R.T. FORCING TERMS:</span>
+    epsilon_k = fterms(gradfk, k) * norm(gradfk);
+
+    <span class="comment">% CHECK IF THE HESSIAN IS SPD</span>
+    spd_it = 0;
+
+    <span class="keyword">try</span> chol(Hessf_computed);
+
+        Hessf_computed = Hessf_computed; <span class="comment">%when the hessian is spd don't touch it</span>
+
+    <span class="keyword">catch</span> ME <span class="comment">%the hessian is not SPD</span>
+
+        <span class="keyword">while</span> spd_it &lt;= spd_max
+            Hessf_SPD = Hessf_computed + tau_k * speye(n);
+            <span class="keyword">try</span> chol(Hessf_SPD);
+                <span class="comment">%disp("HESSIAN IS SPD")%Hessian is SPD</span>
+                tau_k = tau_zero;
+                Hessf_computed = Hessf_SPD;
+                <span class="keyword">break</span>
+
+            <span class="keyword">catch</span> ME <span class="comment">%Hessian is not SPD. Incrementing the value of tau_k</span>
+                <span class="comment">%disp("HESSIAN IS NOT SPD. Adding identity.")</span>
+                tau_k = max(beta, 2*tau_k);
+                spd_it = spd_it + 1;
+                <span class="keyword">continue</span>
+
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="comment">% INEXACTLY COMPUTED DESCENT DIRECTION</span>
+    [pk, ~] = gmres(Hessf_computed, -gradfk, [], epsilon_k, pcg_maxit);
+
+    <span class="comment">% Reset the value of alpha</span>
+    alpha = 1;
+
+    <span class="comment">% Compute the candidate new xk</span>
+    xnew = xk + alpha * pk;
+
+    <span class="comment">% Compute the value of f in the candidate new xk</span>
+    fnew = f(xnew);
+
+    bt = 0;
+    <span class="comment">% Backtracking strategy:</span>
+    <span class="comment">% 2nd condition is the Armijo condition not satisfied</span>
+    <span class="keyword">while</span> bt &lt; btmax &amp;&amp; fnew &gt; farmijo(fk, alpha, xk, pk)
+        <span class="comment">% Reduce the value of alpha</span>
+        alpha = rho * alpha;
+        <span class="comment">% Update xnew and fnew w.r.t. the reduced alpha</span>
+        xnew = xk + alpha * pk;
+        fnew = f(xnew);
+
+        <span class="comment">% Increase the counter by one</span>
+        bt = bt + 1;
+
+    <span class="keyword">end</span>
+
+    <span class="comment">% Update xk, fk, gradfk_norm</span>
+    xk = xnew;
+    fk = fnew;
+    gradfk = gradf(xk);
+    gradfk_norm = norm(gradfk);
+
+    <span class="comment">% Increase the step by one</span>
+    k = k + 1;
+
+    <span class="comment">% Store current xk in xseq</span>
+    xseq(:, k) = xk;
+
+    <span class="comment">% Store gradient and function values in respective arrays</span>
+    grads(k) = gradfk_norm; values(k) = fk;
+
+<span class="keyword">end</span>
+
+k = k - 1;
+<span class="comment">% "Cut" xseq and btseq to the correct size</span>
+xseq = xseq(:, 1:k);
+grads = grads(1:k); values = values(1:k);
+
+<span class="keyword">end</span>
+</pre><pre class="codeoutput error">Not enough input arguments.
+
+Error in innewton_general_with_correction (line 42)
+xseq = zeros(length(x0), kmax);
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2021b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [xk, fk, gradfk_norm, k, xseq, grads, values] = innewton_general_with_correction(x0, f, gradf, Hessf, kmax, ...
+    tolgrad, c1, rho, btmax, fterms, pcg_maxit)
+
+% Function that performs the newton optimization method, 
+% implementing the backtracking strategy and, optionally, finite
+% differences approximations for the gradient and/or the Hessian.
+%
+% INPUTS:
+% x0 = n-dimensional column vector;
+% f = function handle that describes a function R^n->R;
+% gradf = function handle that describes the gradient of f (not necessarily
+% used);
+% Hessf = function handle that describes the Hessian of f (not necessarily 
+% used);
+% kmax = maximum number of iterations permitted;
+% tolgrad = value used as stopping criterion w.r.t. the norm of the
+% gradient;
+% c1 = ﻿the factor of the Armijo condition that must be a scalar in (0,1);
+% rho = ﻿fixed factor, lesser than 1, used for reducing alpha0;
+% btmax = ﻿maximum number of steps for updating alpha during the 
+% backtracking strategy;
+% fterms = f. handle "@(gradfk, k) ..." that returns the forcing term
+% eta_k at each iteration
+% pcg_maxit = maximum number of iterations for the pcg solver.
+%
+% OUTPUTS:
+% xk = the last x computed by the function;
+% fk = the value f(xk);
+% gradfk_norm = value of the norm of gradf(xk)
+% k = index of the last iteration performed
+% xseq = n-by-k matrix where the columns are the xk computed during the 
+% iterations
+% btseq = 1-by-k vector where elements are the number of backtracking
+% iterations at each optimization step.
+%
+
+% Function handle for the armijo condition
+farmijo = @(fk, alpha, gradfk, pk) ...
+    fk + c1 * alpha * gradfk' * pk;
+
+% Initializations
+xseq = zeros(length(x0), kmax);
+grads = zeros(1, kmax);
+values = zeros(1, kmax); 
+
+xk = x0;
+n = length(x0);
+fk = f(xk);
+k = 1;
+gradfk = gradf(xk);
+gradfk_norm = norm(gradfk);
+
+%tau initialization
+beta = 1e-3; 
+a_min = min(diag(Hessf(xk))); 
+
+if a_min > 0
+    tau_zero = 0; 
+else 
+    tau_zero = beta - a_min; 
+end %tau initialization
+
+spd_max = 50;
+tau_k = tau_zero;
+
+while k < kmax && gradfk_norm >= tolgrad
+    % "INEXACTLY" compute the descent direction as solution of
+    Hessf_computed = Hessf(xk);
+    
+    % TOLERANCE VARYING W.R.T. FORCING TERMS:
+    epsilon_k = fterms(gradfk, k) * norm(gradfk);
+
+    % CHECK IF THE HESSIAN IS SPD     
+    spd_it = 0;
+    
+    try chol(Hessf_computed);
+        
+        Hessf_computed = Hessf_computed; %when the hessian is spd don't touch it
+
+    catch ME %the hessian is not SPD
+
+        while spd_it <= spd_max
+            Hessf_SPD = Hessf_computed + tau_k * speye(n);
+            try chol(Hessf_SPD);
+                %disp("HESSIAN IS SPD")%Hessian is SPD
+                tau_k = tau_zero; 
+                Hessf_computed = Hessf_SPD;
+                break
+    
+            catch ME %Hessian is not SPD. Incrementing the value of tau_k
+                %disp("HESSIAN IS NOT SPD. Adding identity.")
+                tau_k = max(beta, 2*tau_k);
+                spd_it = spd_it + 1;
+                continue
+    
+            end
+        end
+    end
+
+    % INEXACTLY COMPUTED DESCENT DIRECTION
+    [pk, ~] = gmres(Hessf_computed, -gradfk, [], epsilon_k, pcg_maxit);
+  
+    % Reset the value of alpha
+    alpha = 1;
+    
+    % Compute the candidate new xk
+    xnew = xk + alpha * pk;
+
+    % Compute the value of f in the candidate new xk
+    fnew = f(xnew);
+    
+    bt = 0;
+    % Backtracking strategy: 
+    % 2nd condition is the Armijo condition not satisfied
+    while bt < btmax && fnew > farmijo(fk, alpha, xk, pk)
+        % Reduce the value of alpha
+        alpha = rho * alpha;
+        % Update xnew and fnew w.r.t. the reduced alpha
+        xnew = xk + alpha * pk;
+        fnew = f(xnew);
+        
+        % Increase the counter by one
+        bt = bt + 1;
+        
+    end
+    
+    % Update xk, fk, gradfk_norm
+    xk = xnew;
+    fk = fnew;
+    gradfk = gradf(xk);
+    gradfk_norm = norm(gradfk);
+    
+    % Increase the step by one
+    k = k + 1;
+    
+    % Store current xk in xseq
+    xseq(:, k) = xk;
+
+    % Store gradient and function values in respective arrays
+    grads(k) = gradfk_norm; values(k) = fk;
+    
+end
+
+k = k - 1; 
+% "Cut" xseq and btseq to the correct size
+xseq = xseq(:, 1:k);
+grads = grads(1:k); values = values(1:k);
+
+end
+##### SOURCE END #####
+--></body></html>
